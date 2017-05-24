@@ -40,7 +40,6 @@ import (
 	"github.com/ethereumproject/go-ethereum/metrics"
 	"github.com/ethereumproject/go-ethereum/node"
 
-	"github.com/davecgh/go-spew/spew"
 )
 
 // Version is the application revision identifier. It can be set with the linker
@@ -264,8 +263,29 @@ func geth(ctx *cli.Context) error {
 }
 
 func status(ctx *cli.Context) error {
-	node := MakeSystemNode(Version, ctx)
-	glog.V(logger.Info).Info(spew.Sdump(node))
+	// Makes sufficient configuration from JSON file or DB pending flags.
+	// Delegates flag usage.
+	config := mustMakeSufficientChainConfig(ctx)
+
+	// Configure the Ethereum service
+	ethConf := mustMakeEthConf(ctx, config)
+
+	// Configure node's service container.
+	name := makeNodeName(Version, ctx)
+	stackConf, _ := mustMakeStackConf(ctx, name, config, ethConf)
+
+	glog.V(logger.Info).Info(glog.Separator("-"))
+	glog.V(logger.Info).Info(colorBlue("* Chain Configuration"))
+	glog.V(logger.Info).Info(logSufficientChainConfigPretty(config))
+
+	glog.V(logger.Info).Info(glog.Separator("-"))
+	glog.V(logger.Info).Info(colorBlue("* Ethereum Configuration"))
+	glog.V(logger.Info).Info(logEthConfigPretty(ethConf))
+
+	glog.V(logger.Info).Info(glog.Separator("-"))
+	glog.V(logger.Info).Info(colorBlue("* Node Configuration"))
+	glog.V(logger.Info).Info(logStackConfigPretty(stackConf))
+
 	return nil
 }
 
